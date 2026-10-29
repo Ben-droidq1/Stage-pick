@@ -1,0 +1,14 @@
+{
+  "name": "stagepick-backend",
+  "private": true,
+  "version": "1.0.0",
+  "type": "module",
+  "description": "StagePick demo user API. Uses only Node built-ins, so it has no npm dependencies.",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}
