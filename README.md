@@ -112,6 +112,11 @@ Prefer the dashboard? **New → Web Service**, connect the repo, then set Root
 Directory `backend`, Build Command `npm install`, Start Command `npm start`,
 and Health Check Path `/health`.
 
+> The backend has no build step. A hand-created Node service starts with
+> Render's default `yarn install; yarn build`, which fails with
+> `error Command "build" not found` — overriding the build command as above
+> (or deploying through the Blueprint) is what fixes it.
+
 ### Environment variables
 
 | Key | Default | Purpose |
