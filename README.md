@@ -29,8 +29,8 @@ recreates `users.json` on first run.
 
 ## Requirements
 
-- Node.js **20.19+** (Vite 8 requires `^20.19.0 || >=22.12.0`; the current LTS
-  release is recommended — see `.nvmrc`)
+- Node.js **20.19+** (Vite 8 requires `^20.19.0 || >=22.12.0`).
+  Tested with Node **26.13.0** LTS — see `.nvmrc`.
 - npm
 
 ## Install
