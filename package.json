@@ -1,35 +1,18 @@
 {
   "name": "stage-pick",
   "private": true,
-  "version": "0.0.0",
-  "type": "module",
+  "version": "1.0.0",
+  "description": "StagePick voting platform — frontend and backend workspace",
   "scripts": {
-    "dev": "vite",
-    "server": "node backend/server.js",
-    "build": "vite build",
-    "lint": "eslint .",
-    "preview": "vite preview",
-    "verify": "node scripts/transpile.mjs && node scripts/verify.mjs"
+    "install:all": "npm install --prefix frontend && npm install --prefix backend",
+    "dev": "npm --prefix frontend run dev",
+    "build": "npm --prefix frontend run build",
+    "preview": "npm --prefix frontend run preview",
+    "lint": "npm --prefix frontend run lint",
+    "verify": "npm --prefix frontend run verify",
+    "server": "npm --prefix backend start"
   },
-  "dependencies": {
-    "lucide-react": "^1.28.0",
-    "react": "^19.2.7",
-    "react-dom": "^19.2.7",
-    "recharts": "^3.10.1"
-  },
-  "devDependencies": {
-    "@babel/core": "^8.0.9",
-    "@babel/plugin-transform-modules-commonjs": "^8.0.1",
-    "@babel/preset-react": "^8.0.1",
-    "@eslint/js": "^10.0.1",
-    "@types/react": "^19.2.17",
-    "@types/react-dom": "^19.2.3",
-    "@vitejs/plugin-react": "^6.0.3",
-    "eslint": "^10.6.0",
-    "eslint-plugin-react-hooks": "^7.1.1",
-    "eslint-plugin-react-refresh": "^0.5.3",
-    "globals": "^17.7.0",
-    "jsdom": "^29.1.1",
-    "vite": "^8.1.1"
+  "engines": {
+    "node": ">=20.19"
   }
 }

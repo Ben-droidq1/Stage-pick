@@ -3,46 +3,69 @@
 A voting platform for live contests: browse events, vote free or paid, watch the
 leaderboard update, and manage a contest from the organiser dashboard.
 
-The whole app is self-contained in this folder:
+The project is split into two independent folders:
 
 ```
 Stage-Pick/
-├─ src/                 React frontend (voter app, organiser dashboard, landing)
-├─ public/              Static assets (favicon)
-├─ backend/             Node user API — no npm dependencies
+├─ frontend/            React + Vite app
+│  ├─ src/              UI: voter app, organiser dashboard, landing, auth store
+│  ├─ public/           Static assets
+│  ├─ scripts/          jsdom flow checks + Babel transpile helper
+│  ├─ index.html
+│  ├─ vite.config.js
+│  ├─ eslint.config.js
+│  ├─ package.json
+│  └─ package-lock.json
+├─ backend/             Node HTTP user API — no npm dependencies
 │  ├─ server.js
 │  └─ package.json
-├─ scripts/             jsdom flow checks and Babel transpile helper
-├─ index.html
-├─ package.json         Frontend + tooling dependencies
-├─ package-lock.json
-└─ vite.config.js
+├─ package.json         Root scripts that delegate to each folder
+└─ README.md
 ```
 
-`node_modules/` is created inside this folder by `npm install`. `dist/` (build
-output), `.verify/` (test output) and `backend/users.json` (runtime data) are
-git-ignored.
+Each folder owns its own dependencies and `node_modules/`. `frontend/dist/`,
+`frontend/.verify/` and `backend/users.json` are git-ignored; the backend
+recreates `users.json` on first run.
 
 ## Requirements
 
-- Node.js 20.19+ or 22.12+ (required by Vite 8; Node 22 LTS recommended)
+- Node.js **20.19+** (Vite 8 requires `^20.19.0 || >=22.12.0`; the current LTS
+  release is recommended — see `.nvmrc`)
 - npm
 
-## Frontend
+## Install
+
+From the repository root:
 
 ```bash
-npm install
-npm run dev        # http://localhost:5173
+npm run install:all
 ```
 
-Production build and preview:
+This installs the frontend toolchain and the backend package. You can also run
+`npm install` inside `frontend/` and `backend/` separately.
+
+## Run
+
+Start the two parts in separate terminals:
 
 ```bash
-npm run build      # writes dist/
-npm run preview    # http://localhost:4173
+npm run server     # backend  → http://localhost:3001
+npm run dev        # frontend → http://localhost:5173
 ```
 
-Useful routes:
+Root scripts are thin wrappers around the folder scripts, so these are
+equivalent:
+
+| Root command | Runs |
+| --- | --- |
+| `npm run dev` | `npm --prefix frontend run dev` |
+| `npm run build` | `npm --prefix frontend run build` |
+| `npm run preview` | `npm --prefix frontend run preview` |
+| `npm run lint` | `npm --prefix frontend run lint` |
+| `npm run verify` | `npm --prefix frontend run verify` |
+| `npm run server` | `npm --prefix backend start` |
+
+### Frontend routes
 
 | URL | Screen |
 | --- | --- |
@@ -52,29 +75,17 @@ Useful routes:
 | `/?view=voter&mode=organizer&wizard=1` | Organiser dashboard with the create-event wizard open |
 | `/?view=oauth` | Sign-up / log-in page |
 
-## Backend
+### Backend API
 
-The API lives in `backend/` and uses only Node's standard library, so it needs
-no separate `npm install`.
-
-```bash
-# from the project root
-npm run server
-
-# or from inside the backend folder
-cd backend
-npm start
-```
-
-It listens on `http://localhost:3001` (override with `PORT`).
+The API uses only Node's standard library, so it has no packages to install. It
+listens on `http://localhost:3001` (override with `PORT`).
 
 | Method | Path | Body | Result |
 | --- | --- | --- | --- |
 | `GET` | `/api/users` | — | `{ users: [...] }` |
 | `POST` | `/api/users` | `{ fullName, email, authProvider? }` | `{ user }` (201) |
 
-Users are stored in `backend/users.json`, which is created automatically on the
-first run.
+Users are stored in `backend/users.json`.
 
 ## Demo sign-in
 
@@ -84,19 +95,16 @@ Email/password sign-in works in the frontend:
 - **Password:** `stagepick123`
 
 You can also create an account from the vote sheet or `/?view=oauth`; new
-accounts are added to the in-memory store for the session. Accounts are not
-persisted across a full page reload (there is no auth database yet).
+accounts are kept in memory for the session only. Accounts do not survive a full
+page reload because there is no auth database yet.
 
-## Scripts
+## Checks
 
-| Command | What it does |
-| --- | --- |
-| `npm run dev` | Start the Vite dev server |
-| `npm run build` | Production build |
-| `npm run preview` | Serve the production build |
-| `npm run server` | Start the backend API |
-| `npm run lint` | Run ESLint |
-| `npm run verify` | Transpile the voter app and run the jsdom flow checks |
+```bash
+npm run verify     # transpile the voter app and run the jsdom flow suite
+npm run lint       # ESLint over frontend sources
+npm run build      # production build in frontend/dist
+```
 
 The verification suite exercises 22 flows: browsing, search, link-only events,
 free/paid voting, sign-in/resume, the organiser dashboard, the profile page,
