@@ -25,7 +25,7 @@ git-ignored.
 
 ## Requirements
 
-- Node.js 18 or newer
+- Node.js 20.19+ or 22.12+ (required by Vite 8; Node 22 LTS recommended)
 - npm
 
 ## Frontend
