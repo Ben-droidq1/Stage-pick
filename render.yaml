@@ -1,0 +1,35 @@
+# Render Blueprint for the StagePick API.
+#
+# Deploy: Render Dashboard → New → Blueprint → pick this repo → Apply.
+# Render reads this file from the repository root.
+#
+# Free plan caveats:
+#   - Free services sleep after 15 minutes idle; the first request afterwards
+#     takes a few seconds to wake the instance.
+#   - Free instances have no persistent disk, so backend/users.json is recreated
+#     empty on every deploy and restart. To keep users, switch to
+#     `plan: starter`, then uncomment the DATA_DIR env var and the disk block.
+
+services:
+  - type: web
+    name: stagepick-api
+    runtime: node
+    plan: free
+    region: oregon
+    rootDir: backend
+    buildCommand: npm install
+    startCommand: npm start
+    healthCheckPath: /health
+    autoDeploy: true
+    envVars:
+      # The backend only needs Node >= 18; pinning 22 keeps it on a long-lived LTS.
+      - key: NODE_VERSION
+        value: "22"
+      - key: CORS_ORIGIN
+        value: https://stagepick.vercel.app,http://localhost:5173
+      # - key: DATA_DIR
+      #   value: /var/data
+    # disk:
+    #   name: stagepick-data
+    #   mountPath: /var/data
+    #   sizeGB: 1

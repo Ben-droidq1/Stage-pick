@@ -13,6 +13,11 @@ dist-ssr
 .verify
 *.local
 
+# Local env files (keep the documented example)
+.env
+.env.*
+!.env.example
+
 # Backend runtime data (created automatically on first run)
 backend/users.json
 

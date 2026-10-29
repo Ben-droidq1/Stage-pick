@@ -385,6 +385,32 @@ body {
   flex-shrink: 0;
 }
 
+/* Container for Google's rendered button. GIS only accepts a pixel width, so
+   the component redraws it to match this box. */
+.auth-google {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  margin-top: 26px;
+  min-height: 44px;
+}
+
+.auth-google.is-loading {
+  border-radius: 999px;
+  background: var(--paper);
+  opacity: 0.6;
+}
+
+.auth-oauth:disabled {
+  cursor: not-allowed;
+  opacity: 0.55;
+}
+
+.auth-google-error {
+  margin-top: 10px;
+}
+
 .auth-divider {
   display: flex;
   align-items: center;

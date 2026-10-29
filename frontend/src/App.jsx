@@ -12,6 +12,8 @@ import {
 } from "lucide-react";
 import "./App.css";
 import StagePickLanding from "./landing.jsx";
+import GoogleSignInButton from "./GoogleSignInButton.jsx";
+import { accountFromProfile, decodeCredential } from "./googleAuth";
 import { DEMO_ACCOUNT, EMAIL_RE, checkCredentials, publicAccount } from "./authStore";
 
 // The dashboard pulls in the charting library, so only load it once the
@@ -44,29 +46,6 @@ function initials(name) {
     .toUpperCase();
 }
 
-function GoogleMark() {
-  return (
-    <svg className="auth-google-mark" viewBox="0 0 18 18" width="17" height="17" aria-hidden="true">
-      <path
-        fill="#4285F4"
-        d="M17.64 9.2c0-.64-.06-1.25-.16-1.84H9v3.48h4.84a4.14 4.14 0 0 1-1.8 2.72v2.26h2.92c1.71-1.57 2.68-3.88 2.68-6.62z"
-      />
-      <path
-        fill="#34A853"
-        d="M9 18c2.43 0 4.47-.8 5.96-2.18l-2.92-2.26c-.81.54-1.84.86-3.04.86-2.34 0-4.32-1.58-5.03-3.7H.96v2.34A9 9 0 0 0 9 18z"
-      />
-      <path
-        fill="#FBBC05"
-        d="M3.97 10.72a5.4 5.4 0 0 1 0-3.44V4.94H.96a9 9 0 0 0 0 8.12l3.01-2.34z"
-      />
-      <path
-        fill="#EA4335"
-        d="M9 3.58c1.32 0 2.5.46 3.44 1.35l2.58-2.58C13.46.9 11.43 0 9 0A9 9 0 0 0 .96 4.94l3.01 2.34C4.68 5.16 6.66 3.58 9 3.58z"
-      />
-    </svg>
-  );
-}
-
 function App() {
   const [view, setView] = useState(
     new URLSearchParams(window.location.search).get("view") || "landing",
@@ -84,6 +63,7 @@ function App() {
   const [users, setUsers] = useState(() => [DEMO_ACCOUNT]);
   const [account, setAccount] = useState(null);
   const [signedIn, setSignedIn] = useState(false);
+  const [googleError, setGoogleError] = useState("");
 
   const handleGetStarted = () => {
     const url = new URL(window.location.href);
@@ -133,9 +113,28 @@ function App() {
     setView("home");
   };
 
-  // Google is a demo shortcut: it signs into the seeded account.
-  const handleAuth = () => {
-    const next = publicAccount(users[0]);
+  // Google hands back a signed ID token; we read the profile out of it and
+  // reuse the account if that email has signed in before.
+  const handleGoogleCredential = (response) => {
+    const profile = decodeCredential(response?.credential);
+
+    if (!profile?.email) {
+      setGoogleError("Google didn't send an email address back. Try again or use email instead.");
+      return;
+    }
+
+    const profileAccount = accountFromProfile(profile);
+    const existing = users.find(
+      (user) => user.email.toLowerCase() === profileAccount.email.toLowerCase(),
+    );
+    const next = existing ? publicAccount(existing) : profileAccount;
+
+    if (!existing) {
+      // Google accounts have no password; they can only sign in with Google.
+      setUsers((current) => [...current, { ...next, password: null, provider: "google" }]);
+    }
+
+    setGoogleError("");
     setAccount(next);
     setSignedIn(true);
     openHome();
@@ -289,10 +288,20 @@ function App() {
               </p>
             </header>
 
-            <button type="button" className="auth-oauth" onClick={handleAuth}>
-              <GoogleMark />
-              Continue with Google
-            </button>
+            <GoogleSignInButton
+              onCredential={handleGoogleCredential}
+              onUnavailable={() =>
+                setGoogleError(
+                  "Google sign-in couldn't load. Check your connection and reload, or use your email below.",
+                )
+              }
+            />
+
+            {googleError && (
+              <p className="auth-form-error auth-google-error" role="alert">
+                {googleError}
+              </p>
+            )}
 
             <div className="auth-divider">
               <span>{authMode === "signup" ? "or sign up with email" : "or log in with email"}</span>
