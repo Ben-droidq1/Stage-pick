@@ -13,6 +13,7 @@ import {
 import "./App.css";
 import StagePickLanding from "./landing.jsx";
 import GoogleSignInButton from "./GoogleSignInButton.jsx";
+import { createUser } from "./api";
 import { accountFromProfile, decodeCredential } from "./googleAuth";
 import { DEMO_ACCOUNT, EMAIL_RE, checkCredentials, publicAccount } from "./authStore";
 
@@ -80,6 +81,12 @@ function App() {
     setView("landing");
   };
 
+  // Best effort: mirror the sign-up to the API. The UI never waits on it, so a
+  // sleeping Render instance can't hold up the form.
+  const persistSignup = (account, authProvider) => {
+    createUser({ fullName: account.name, email: account.email, authProvider });
+  };
+
   // The single source of truth for both the landing signup form and the
   // voter app's sign-in sheet. Returns { ok, account, error } so callers can
   // show the failure inline without guessing what went wrong.
@@ -92,6 +99,7 @@ function App() {
 
     if (result.created) {
       setUsers((prev) => [...prev, result.created]);
+      persistSignup(result.account, "email");
     }
 
     setAccount(result.account);
@@ -132,6 +140,7 @@ function App() {
     if (!existing) {
       // Google accounts have no password; they can only sign in with Google.
       setUsers((current) => [...current, { ...next, password: null, provider: "google" }]);
+      persistSignup(next, "google");
     }
 
     setGoogleError("");

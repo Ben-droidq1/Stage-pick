@@ -135,10 +135,18 @@ Render's **free** plan has no disks and restarts instances regularly, so
 
 ### Frontend wiring
 
-The frontend does not call the API yet (accounts live in memory). When you wire
-it up, point it at the service with `VITE_API_URL`, e.g.
-`VITE_API_URL=https://stagepick-api.onrender.com`, and add the frontend origin
-to `CORS_ORIGIN`.
+Sign-ups are mirrored to the API: `POST /api/users` fires after a successful
+email sign-up or Google sign-in, and a failure is ignored (a cold Render
+instance, or `409` for an email that is already registered, never blocks the
+form). The base URL comes from `VITE_API_URL` and defaults to the deployed API:
+
+```bash
+# frontend/.env.local — point at the local server instead
+VITE_API_URL=http://localhost:3001
+```
+
+Because accounts are only written on sign-up, `GET /api/users` is the record of
+who registered; there is no login endpoint yet.
 
 ## Demo sign-in
 
