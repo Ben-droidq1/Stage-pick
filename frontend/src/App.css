@@ -25,6 +25,10 @@
   --on-amber: #2a1b06;
   --good: #1f7a4d;
   --warn: #c2412f;
+
+  /* Motion tokens: one easing family, all UI transitions under 300ms. */
+  --ease-out: cubic-bezier(0.23, 1, 0.32, 1);
+  --ease-in-out: cubic-bezier(0.77, 0, 0.175, 1);
 }
 
 html,
@@ -283,6 +287,7 @@ body {
   font-family: "JetBrains Mono", monospace;
   font-size: 12px;
   font-weight: 700;
+  font-variant-numeric: tabular-nums;
 }
 
 /* Form panel -------------------------------------------------------- */
@@ -321,11 +326,7 @@ body {
   font-weight: 700;
   color: var(--ink-mute);
   cursor: pointer;
-  transition: color 0.15s;
-}
-
-.auth-back:hover {
-  color: var(--ink);
+  transition: color 0.15s var(--ease-out);
 }
 
 .auth-eyebrow {
@@ -352,6 +353,8 @@ body {
   margin: 0;
   font-size: 14.5px;
   color: var(--ink-dim);
+  max-width: 65ch;
+  line-height: 1.55;
 }
 
 .auth-oauth {
@@ -370,15 +373,11 @@ body {
   font-weight: 700;
   color: var(--ink);
   cursor: pointer;
-  transition: background 0.15s, transform 0.15s;
-}
-
-.auth-oauth:hover {
-  background: #f0ede2;
+  transition: background 0.15s var(--ease-out), transform 0.15s var(--ease-out);
 }
 
 .auth-oauth:active {
-  transform: translateY(1px);
+  transform: scale(0.97);
 }
 
 .auth-google-mark {
@@ -455,11 +454,7 @@ body {
   background: #ffffff;
   border: 1.5px solid #dcd8ca;
   border-radius: 12px;
-  transition: border-color 0.15s, box-shadow 0.15s;
-}
-
-.auth-input:hover {
-  border-color: var(--line-strong);
+  transition: border-color 0.15s var(--ease-out), box-shadow 0.15s var(--ease-out);
 }
 
 .auth-input:focus-within {
@@ -505,10 +500,7 @@ body {
   background: none;
   color: var(--ink-mute);
   cursor: pointer;
-}
-
-.auth-reveal:hover {
-  color: var(--ink);
+  transition: color 0.15s var(--ease-out);
 }
 
 .auth-error {
@@ -565,16 +557,11 @@ body {
   font-size: 14.5px;
   font-weight: 800;
   cursor: pointer;
-  transition: background 0.15s, transform 0.15s;
-}
-
-.auth-submit:hover {
-  background: #2b2833;
-  transform: translateY(-1px);
+  transition: background 0.15s var(--ease-out), transform 0.15s var(--ease-out);
 }
 
 .auth-submit:active {
-  transform: translateY(0);
+  transform: scale(0.97);
 }
 
 .auth-fineprint {
@@ -589,10 +576,6 @@ body {
   color: var(--ink);
   font-weight: 600;
   text-underline-offset: 3px;
-}
-
-.auth-fineprint a:hover {
-  text-decoration-color: var(--green);
 }
 
 .auth-switch {
@@ -616,8 +599,36 @@ body {
   text-decoration-color: var(--green);
 }
 
-.auth-switch button:hover {
-  text-decoration-color: var(--ink);
+/* Hover only on devices that can actually hover. */
+@media (hover: hover) and (pointer: fine) {
+  .auth-back:hover {
+    color: var(--ink);
+  }
+
+  .auth-oauth:hover {
+    background: #f0ede2;
+  }
+
+  .auth-input:hover {
+    border-color: var(--line-strong);
+  }
+
+  .auth-reveal:hover {
+    color: var(--ink);
+  }
+
+  .auth-submit:hover:not(:active) {
+    background: #2b2833;
+    transform: translateY(-1px);
+  }
+
+  .auth-fineprint a:hover {
+    text-decoration-color: var(--green);
+  }
+
+  .auth-switch button:hover {
+    text-decoration-color: var(--ink);
+  }
 }
 
 .auth-page :focus-visible {
@@ -686,9 +697,122 @@ body {
   }
 }
 
+/* Entrance motion ---------------------------------------------------- */
+/* Predetermined mount motion only: transform + opacity, ease-out, and
+   `backwards` fill so finished animations release hover transforms. */
+
+@keyframes auth-rise {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@keyframes auth-card-in {
+  from {
+    opacity: 0;
+    transform: translateY(16px) scale(0.985);
+  }
+
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@keyframes auth-fade {
+  from {
+    opacity: 0;
+  }
+
+  to {
+    opacity: 1;
+  }
+}
+
+.auth-aside-glow {
+  animation: auth-fade 600ms var(--ease-out) backwards;
+}
+
+.auth-brand {
+  animation: auth-rise 300ms var(--ease-out) backwards;
+}
+
+.auth-pitch > * {
+  animation: auth-rise 320ms var(--ease-out) backwards;
+}
+
+.auth-pitch > :nth-child(1) {
+  animation-delay: 60ms;
+}
+
+.auth-pitch > :nth-child(2) {
+  animation-delay: 100ms;
+}
+
+.auth-pitch > :nth-child(3) {
+  animation-delay: 150ms;
+}
+
+.auth-preview {
+  animation: auth-card-in 380ms var(--ease-out) 200ms backwards;
+}
+
+.auth-card {
+  animation: auth-card-in 340ms var(--ease-out) 40ms backwards;
+}
+
+/* The card's own contents settle in just behind it. */
+.auth-card > * {
+  animation: auth-rise 260ms var(--ease-out) backwards;
+}
+
+.auth-card > :nth-child(1) {
+  animation-delay: 90ms;
+}
+
+.auth-card > :nth-child(2) {
+  animation-delay: 130ms;
+}
+
+.auth-card > :nth-child(3) {
+  animation-delay: 170ms;
+}
+
+.auth-card > :nth-child(4) {
+  animation-delay: 210ms;
+}
+
+.auth-card > :nth-child(5) {
+  animation-delay: 250ms;
+}
+
+.auth-card > :nth-child(6) {
+  animation-delay: 290ms;
+}
+
+.auth-card > :nth-child(7) {
+  animation-delay: 330ms;
+}
+
 @media (prefers-reduced-motion: reduce) {
   .app-loading::before {
     animation: none;
+  }
+
+  .auth-page *,
+  .auth-page *::before,
+  .auth-page *::after {
+    transition-duration: 0.01ms !important;
+    transition-delay: 0ms !important;
+    animation-duration: 0.01ms !important;
+    animation-delay: 0ms !important;
+    animation-iteration-count: 1 !important;
   }
 
   .auth-submit:hover {

@@ -88,6 +88,11 @@ function formatEventDate(value) {
   return date.toLocaleDateString([], { day: "numeric", month: "short" });
 }
 
+// "1 contestant" / "4 contestants" — counts never read wrong.
+function countLabel(count, singular) {
+  return `${count.toLocaleString()} ${count === 1 ? singular : `${singular}s`}`;
+}
+
 // ---------------------------------------------------------------------------
 // Demo data. Each event owns its own contestants, voting rules and visibility,
 // so switching events in the dashboard genuinely swaps the whole contest.
@@ -436,7 +441,7 @@ export default function StagePickApp({ onOpenHome = null }) {
   });
   const [pastVotes] = useState([
     { contestant: "Bella Babalola", category: "Miss Fresher 2026 · Arts", date: "3 days ago" },
-    { contestant: "DJ Nova", category: "Battle of the DJs · Amapiano", date: "Last week" },
+    { contestant: "DJ Nova", category: "Battle of the DJs · Amapiano", date: "24 Oct 2026" },
     { contestant: "Team Bytewise", category: "Hackathon Demo Day · Fintech", date: "12 Oct 2026" },
   ]);
 
@@ -824,6 +829,7 @@ export default function StagePickApp({ onOpenHome = null }) {
                       aria-selected={i === eventIndex}
                       className={`voter-chip${i === eventIndex ? " active" : ""}`}
                       onClick={() => setEventIndex(i)}
+                      style={{ "--i": Math.min(i, 7) }}
                     >
                       <span
                         className="voter-chip-thumb"
@@ -834,7 +840,7 @@ export default function StagePickApp({ onOpenHome = null }) {
                       <span className="voter-chip-body">
                         <span className="voter-chip-name">{ev.name}</span>
                         <span className="voter-chip-meta">
-                          {ev.contestants.length} contestants · {evTotal.toLocaleString()} votes
+                          {countLabel(ev.contestants.length, "contestant")} · {countLabel(evTotal, "vote")}
                         </span>
                       </span>
                     </button>
@@ -850,17 +856,19 @@ export default function StagePickApp({ onOpenHome = null }) {
               className="voter-hero-glow"
               aria-hidden="true"
               style={{
-                background: `radial-gradient(ellipse 640px 320px at 10% 0%, ${activeEvent.accent || "#3B5BF5"}33, transparent 70%)`,
+                background: `radial-gradient(ellipse 640px 320px at 10% 0%, ${activeEvent.accent || "#3B5BF5"}40 0%, ${activeEvent.accent || "#3B5BF5"}1f 38%, ${activeEvent.accent || "#3B5BF5"}0a 62%, transparent 78%)`,
+                maskImage: "linear-gradient(90deg, transparent 0%, #000 16%)",
+                WebkitMaskImage: "linear-gradient(90deg, transparent 0%, #000 16%)",
               }}
             />
             <div className="app-wrap voter-hero-inner">
-              <div className="voter-hero-copy">
+              <div className="voter-hero-copy" key={activeEvent.id}>
                 <div className="voter-hero-tags">
                   <span className="voter-badge"><span className="voter-dot"></span>Live</span>
                   <span className="voter-tag-pill">
                     {activeEvent.visibility === "unlisted" ? "Unlisted" : "Public"}
                   </span>
-                  <span className="voter-tag-pill">{contestants.length} contestants</span>
+                  <span className="voter-tag-pill">{countLabel(contestants.length, "contestant")}</span>
                   {formatEventDate(activeEvent.startsAt) && (
                     <span className="voter-tag-pill">{formatEventDate(activeEvent.startsAt)}</span>
                   )}
@@ -897,7 +905,7 @@ export default function StagePickApp({ onOpenHome = null }) {
               </span>
             </div>
 
-            <div className="voter-list">
+            <div className="voter-list" key={activeEvent.id}>
               {ranked.map((c, i) => {
                 const share = ranked[0]?.votes ? Math.round((c.votes / ranked[0].votes) * 100) : 0;
                 const eliminated = c.status === "eliminated";
@@ -906,6 +914,7 @@ export default function StagePickApp({ onOpenHome = null }) {
                   <div
                     className={`voter-card${i < 3 ? ` podium podium-${i + 1}` : ""}${eliminated ? " eliminated" : ""}`}
                     key={c.id}
+                    style={{ "--i": Math.min(i, 8) }}
                   >
                     <div className="voter-rank">{i + 1}</div>
                     <div className="voter-avatar">{initials(c.name)}</div>
@@ -920,7 +929,7 @@ export default function StagePickApp({ onOpenHome = null }) {
                         <span className="voter-share">{share}%</span>
                       </div>
                       <div className="voter-track">
-                        <span style={{ width: `${share}%` }} />
+                        <span style={{ transform: `scaleX(${share / 100})` }} />
                       </div>
                     </div>
                     <Sparkline data={voteHistory[c.id]} />
@@ -949,8 +958,8 @@ export default function StagePickApp({ onOpenHome = null }) {
                   You haven&apos;t voted yet — pick a contestant above.
                 </div>
               )}
-              {myVotes.map((v) => (
-                <div className="voter-history-row" key={v.id}>
+              {myVotes.map((v, i) => (
+                <div className="voter-history-row" key={v.id} style={{ "--i": Math.min(i, 6) }}>
                   <div>
                     <div className="voter-history-event">{v.name}{v.quantity > 1 ? ` ×${v.quantity}` : ""}</div>
                     <div className="voter-history-meta">
@@ -963,8 +972,8 @@ export default function StagePickApp({ onOpenHome = null }) {
                   </div>
                 </div>
               ))}
-              {pastVotes.map((v) => (
-                <div className="voter-history-row" key={v.contestant}>
+              {pastVotes.map((v, i) => (
+                <div className="voter-history-row" key={v.contestant} style={{ "--i": Math.min(myVotes.length + i, 6) }}>
                   <div>
                     <div className="voter-history-event">{v.contestant}</div>
                     <div className="voter-history-meta">{v.category}</div>
