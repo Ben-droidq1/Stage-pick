@@ -177,21 +177,32 @@ assert.ok(text().includes("You've used your free vote for this event."));
 assert.ok(!btn("Vote Free", document.querySelector(".sp-sheet")));
 ok("second free vote is blocked once used");
 
-// 7. Paid flow totals at every step, then cast.
+// 7. Paid flow on a paid-only event, totals at every step, then cast.
+await click(document.querySelector(".sp-sheet .sp-close"));
+await click(btn("All events"));
+const paidLinkForm = document.querySelector(".sp-linkbox");
+await type(document.querySelector("#sp-link"), "DJS26");
+await submit(paidLinkForm);
+assert.equal(document.querySelector("h1").textContent, "Battle of the DJs");
+const paidRow = document.querySelector(".sp-lbrow");
+const paidBefore = Number(
+  paidRow.querySelector(".sp-lbvotes").textContent.replace(/,/g, ""),
+);
+await click(btn("Vote", paidRow));
 await click(document.querySelector('button[aria-label="Add one vote"]'));
 await click(document.querySelector('button[aria-label="Add one vote"]'));
-assert.ok(text().includes("₦150"), "total updates with quantity");
+assert.ok(text().includes("₦300"), "total updates with quantity");
 await click(btn("Continue to Payment"));
-assert.ok(text().includes("3 votes × ₦50"));
-assert.ok(text().includes("₦150"));
-await click(btn("Pay ₦150"));
+assert.ok(text().includes("3 votes × ₦100"));
+assert.ok(text().includes("₦300"));
+await click(btn("Pay ₦300"));
 assert.ok(text().includes("Payment successful"));
 await click(btn("Cast 3 Votes"));
 assert.ok(text().includes("3 paid votes counted"));
 const paidAfter = Number(
   document.querySelector(".sp-lbrow .sp-lbvotes").textContent.replace(/,/g, ""),
 );
-assert.equal(paidAfter, before + 4);
+assert.equal(paidAfter, paidBefore + 3);
 ok("paid purchase shows the total at each step and casts 3 votes");
 
 // 8. Ended event is read-only; activity strip lives on home.

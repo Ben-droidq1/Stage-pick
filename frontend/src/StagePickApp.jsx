@@ -127,8 +127,8 @@ const SEED_EVENTS = [
     visibility: "public",
     freeVotingEnabled: true,
     freeVoteLimit: 1,
-    paidVotingEnabled: true,
-    paidVotePrice: 50,
+    paidVotingEnabled: false,
+    paidVotePrice: 0,
     votingDisabled: false,
     contestants: [
       person("t1", "Amara Okafor", "Music", 842, 36),
@@ -170,8 +170,8 @@ const SEED_EVENTS = [
     startsAt: BOOT - 30 * HOUR,
     endsAt: BOOT + 3 * HOUR,
     visibility: "public",
-    freeVotingEnabled: true,
-    freeVoteLimit: 1,
+    freeVotingEnabled: false,
+    freeVoteLimit: 0,
     paidVotingEnabled: true,
     paidVotePrice: 50,
     votingDisabled: false,
@@ -187,13 +187,13 @@ const SEED_EVENTS = [
     slug: "miss-fresher-2026",
     code: "FRESHER26",
     name: "Miss Fresher 2026",
-    description: "The freshers' showcase. Two free votes each, then paid votes.",
+    description: "The freshers' showcase. Paid votes support your faculty.",
     cover: cover("#ffdde6", "#f8f2e6"),
     startsAt: BOOT - 1 * HOUR,
     endsAt: BOOT + 18 * HOUR,
     visibility: "public",
-    freeVotingEnabled: true,
-    freeVoteLimit: 2,
+    freeVotingEnabled: false,
+    freeVoteLimit: 0,
     paidVotingEnabled: true,
     paidVotePrice: 50,
     votingDisabled: false,
@@ -214,8 +214,8 @@ const SEED_EVENTS = [
     startsAt: BOOT - 3 * HOUR,
     endsAt: BOOT + 9 * HOUR,
     visibility: "public",
-    freeVotingEnabled: true,
-    freeVoteLimit: 1,
+    freeVotingEnabled: false,
+    freeVoteLimit: 0,
     paidVotingEnabled: true,
     paidVotePrice: 50,
     votingDisabled: true,
@@ -257,8 +257,8 @@ const SEED_EVENTS = [
     startsAt: BOOT + 2 * DAY + 4 * HOUR,
     endsAt: BOOT + 2 * DAY + 9 * HOUR,
     visibility: "public",
-    freeVotingEnabled: true,
-    freeVoteLimit: 1,
+    freeVotingEnabled: false,
+    freeVoteLimit: 0,
     paidVotingEnabled: true,
     paidVotePrice: 75,
     votingDisabled: false,
@@ -278,8 +278,8 @@ const SEED_EVENTS = [
     startsAt: BOOT + 7 * DAY,
     endsAt: BOOT + 7 * DAY + 5 * HOUR,
     visibility: "public",
-    freeVotingEnabled: true,
-    freeVoteLimit: 1,
+    freeVotingEnabled: false,
+    freeVoteLimit: 0,
     paidVotingEnabled: true,
     paidVotePrice: 150,
     votingDisabled: false,
@@ -321,8 +321,8 @@ const SEED_EVENTS = [
     startsAt: BOOT - 3 * DAY,
     endsAt: BOOT - 1 * DAY - 4 * HOUR,
     visibility: "public",
-    freeVotingEnabled: true,
-    freeVoteLimit: 1,
+    freeVotingEnabled: false,
+    freeVoteLimit: 0,
     paidVotingEnabled: true,
     paidVotePrice: 40,
     votingDisabled: false,
@@ -345,8 +345,8 @@ const SEED_EVENTS = [
     visibility: "private",
     freeVotingEnabled: true,
     freeVoteLimit: 2,
-    paidVotingEnabled: true,
-    paidVotePrice: 200,
+    paidVotingEnabled: false,
+    paidVotePrice: 0,
     votingDisabled: false,
     contestants: [
       person("p1", "Kola Adebayo", "Fintech", 412, 12),
@@ -653,9 +653,36 @@ const CSS = `
 .sp-empty h2{margin:0 0 6px;font-size:17px;font-weight:800;letter-spacing:-.02em;}
 .sp-empty p{margin:0 0 18px;color:var(--ink-dim);font-size:13px;max-width:42ch;
   margin-left:auto;margin-right:auto;line-height:1.55;}
-.sp-skel{margin-top:14px;height:220px;border-radius:20px;border:1px solid var(--line);
-  background:linear-gradient(90deg,#f1eee3 25%,#fbf9f1 37%,#f1eee3 63%);
-  background-size:400% 100%;animation:sp-shimmer 1.4s ease infinite;}
+/* Skeleton cards: same footprint as the real event cards, so the grid does
+   not jump when the 350ms demo load finishes. */
+.sp-skel-head{display:flex;align-items:center;gap:10px;margin-bottom:12px;}
+.sp-skel-line{
+  display:block;border-radius:999px;
+  background:linear-gradient(90deg,#ece8db 25%,#fbf9f1 37%,#ece8db 63%);
+  background-size:400% 100%;animation:sp-shimmer 1.4s ease infinite;
+}
+.sp-skel-title{width:110px;height:15px;border-radius:6px;}
+.sp-skel-count{width:26px;height:11px;}
+.sp-skel-cards{display:flex;flex-direction:column;gap:14px;}
+.sp-skel-card{
+  border:1px solid var(--line);border-radius:20px;background:var(--panel);overflow:hidden;
+}
+.sp-skel-cover{
+  height:96px;
+  background:linear-gradient(90deg,#ece8db 25%,#fbf9f1 37%,#ece8db 63%);
+  background-size:400% 100%;animation:sp-shimmer 1.4s ease infinite;
+}
+.sp-skel-body{padding:16px;display:flex;flex-direction:column;gap:10px;}
+.sp-skel-body .sp-skel-line{height:12px;}
+.sp-skel-body .w70{width:70%;}
+.sp-skel-body .w90{width:90%;}
+.sp-skel-body .w50{width:50%;}
+@media (min-width:900px){
+  .sp-skel-cards{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px;}
+}
+@media (prefers-reduced-motion:reduce){
+  .sp-skel-line,.sp-skel-cover{animation:none;}
+}
 @keyframes sp-shimmer{from{background-position:100% 0}to{background-position:0 0}}
 .sp-create{margin:38px 0 10px;border:1px dashed var(--line-strong);border-radius:22px;
   padding:28px 22px;text-align:center;background:rgba(255,253,247,.65);}
@@ -1536,7 +1563,7 @@ export default function StagePickApp({
                 <div className="sp-empty sp-profile-empty">
                   <h2>No votes yet</h2>
                   <p>
-                    Free and paid votes appear here with the contestant, event and receipt — so you
+                    Your votes appear here with the contestant, event and receipt — so you
                     always know what you backed.
                   </p>
                   <button type="button" className="sp-btn primary" onClick={closeProfile}>
@@ -1767,9 +1794,23 @@ export default function StagePickApp({
               )}
 
               {loading ? (
-                <div className="sp-sec">
-                  <div className="sp-skel" />
-                  <div className="sp-skel" />
+                <div className="sp-sec" aria-hidden="true">
+                  <div className="sp-skel-head">
+                    <span className="sp-skel-line sp-skel-title" />
+                    <span className="sp-skel-line sp-skel-count" />
+                  </div>
+                  <div className="sp-skel-cards">
+                    {Array.from({ length: 4 }).map((_, i) => (
+                      <div className="sp-skel-card" key={i}>
+                        <div className="sp-skel-cover" />
+                        <div className="sp-skel-body">
+                          <span className="sp-skel-line w70" />
+                          <span className="sp-skel-line w90" />
+                          <span className="sp-skel-line w50" />
+                        </div>
+                      </div>
+                    ))}
+                  </div>
                 </div>
               ) : matching.length === 0 ? (
                 <div className="sp-empty">
@@ -2228,7 +2269,7 @@ export default function StagePickApp({
                 </h2>
                 <p className="sp-sheet-body" style={{ marginTop: 4 }}>
                   {authMode === "signup"
-                    ? "One free vote per event, plus paid votes when you want more. It takes a second."
+                    ? "Create an account so your vote counts. It takes a second."
                     : "We only ask when it's time to count your vote. Sign in and we'll pick up right where you left off."}
                 </p>
               </div>

@@ -17,8 +17,8 @@ const FEATURES = [
   ],
   [
     "02",
-    "Free & paid voting",
-    "Give every voter a free vote, then let them buy more — quantity, total, and what happens next, always shown before payment.",
+    "Free or paid voting",
+    "Run it free with a set number of votes per voter, or paid at a price you choose — quantity, total and what happens next are always shown before payment.",
     "m2",
   ],
   [
@@ -234,7 +234,7 @@ export default function StagePickLanding({ onGetStarted }) {
             </h1>
 
             <p className="lp-sub">
-              Run pageants, talent shows, and competitions with free and paid voting,
+              Run pageants, talent shows, and competitions with free or paid voting,
               real-time leaderboards, and zero WhatsApp counting.
             </p>
 
@@ -299,7 +299,7 @@ export default function StagePickLanding({ onGetStarted }) {
               <ul>
                 {[
                   "Votes counted automatically, in real time",
-                  "Free and paid votes, both enforced server-side",
+                  "Free or paid voting, enforced server-side",
                   "A public, timestamped result every time",
                   "Buy any quantity of votes — total shown up front",
                   "Live leaderboard your audience can watch",
@@ -347,7 +347,7 @@ export default function StagePickLanding({ onGetStarted }) {
               [
                 "1",
                 "Create the contest",
-                "Add your contestants, decide whether voting is free, paid, or both, and set your price per vote.",
+                "Add your contestants, choose free or paid voting, and set the price per vote.",
               ],
               [
                 "2",
@@ -407,9 +407,9 @@ export default function StagePickLanding({ onGetStarted }) {
             </div>
             <div className="lp-price-card">
               <span className="lp-price-blob blue" aria-hidden="true" />
-              <h3>Both, together</h3>
-              <div className="lp-price">Your call</div>
-              <p>Run free and paid voting side by side in the same event — most pageants do exactly this.</p>
+              <h3>Your choice</h3>
+              <div className="lp-price">Pick one</div>
+              <p>Run free or paid voting — pick the model that fits the event, and switch later if it changes.</p>
             </div>
           </div>
         </div>
@@ -424,7 +424,7 @@ export default function StagePickLanding({ onGetStarted }) {
         <div className="lp-label">Ready when you are</div>
         <h2 className="lp-h2">Your next show doesn't need a notebook.</h2>
         <p className="lp-lede">
-          Set up your first contest in under ten minutes — free voting included, paid voting optional.
+          Set up your first contest in under ten minutes — free or paid voting included.
         </p>
         <div className="lp-hero-ctas">
           <button type="button" className="lp-btn-primary" onClick={handleStart}>

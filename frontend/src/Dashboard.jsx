@@ -100,9 +100,104 @@ function formatEventDate(value) {
   return date.toLocaleDateString([], { day: "numeric", month: "short" });
 }
 
+// `datetime-local` wants a local "YYYY-MM-DDTHH:mm" string, not an ISO one.
+function localDateTime(ms) {
+  const date = new Date(ms);
+  const pad = (value) => String(value).padStart(2, "0");
+  return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}T${pad(date.getHours())}:${pad(date.getMinutes())}`;
+}
+
+const HOUR_MS = 60 * 60 * 1000;
+const SEED_NOW = Date.now();
+
 // "1 contestant" / "4 contestants" — counts never read wrong.
 function countLabel(count, singular) {
   return `${count.toLocaleString()} ${count === 1 ? singular : `${singular}s`}`;
+}
+
+// Where an event sits in time. The voter rail uses this so live contests lead
+// and the default selection is a running event, not whichever seed is first.
+function eventPhase(event, now = Date.now()) {
+  const start = event.startsAt ? new Date(event.startsAt).getTime() : NaN;
+  const end = event.endsAt ? new Date(event.endsAt).getTime() : NaN;
+  if (!Number.isNaN(start) && now < start) return "upcoming";
+  if (!Number.isNaN(end) && now > end) return "ended";
+  return "live";
+}
+
+const PHASE_ORDER = { live: 0, upcoming: 1, ended: 2 };
+const PHASE_LABEL = { live: "Live", upcoming: "Upcoming", ended: "Ended" };
+const ACTIVE_EVENT_KEY = "stagepick:active-event";
+
+// Remember the event a voter picked so a refresh (or a trip through the
+// organiser view) doesn't snap the rail back to the first event.
+function pickInitialEventId(events) {
+  try {
+    const fromUrl = new URLSearchParams(window.location.search).get("event");
+    if (fromUrl && events.some((event) => event.id === fromUrl)) return fromUrl;
+  } catch {
+    /* No URL access — fall through to the in-browser preference. */
+  }
+
+  try {
+    const stored = window.localStorage.getItem(ACTIVE_EVENT_KEY);
+    if (stored && events.some((event) => event.id === stored)) return stored;
+  } catch {
+    /* Private mode can block storage. */
+  }
+
+  const ordered = [...events].sort(
+    (a, b) => PHASE_ORDER[eventPhase(a)] - PHASE_ORDER[eventPhase(b)],
+  );
+  return ordered[0]?.id ?? events[0]?.id;
+}
+
+// Voting is one thing per event: free or paid. Never both.
+function votingModeOf(event) {
+  return event.paidVotingEnabled && !event.freeVotingEnabled ? "paid" : "free";
+}
+
+function votingModePatch(event, mode) {
+  const free = mode === "free";
+  return {
+    freeVotingEnabled: free,
+    paidVotingEnabled: !free,
+    freeVoteLimit: free ? Math.max(1, event.freeVoteLimit || 1) : 0,
+    paidVotePrice: free ? 0 : Math.max(1, event.paidVotePrice || 50),
+  };
+}
+
+const VOTING_MODES = [
+  {
+    key: "free",
+    label: "Free voting",
+    desc: "Each voter gets a limited number of free votes.",
+  },
+  {
+    key: "paid",
+    label: "Paid voting",
+    desc: "Voters buy votes at a price you set.",
+  },
+];
+
+function VotingModePicker({ value, onChange, label = "Voting type" }) {
+  return (
+    <div className="org-vote-mode" role="radiogroup" aria-label={label}>
+      {VOTING_MODES.map((mode) => (
+        <button
+          key={mode.key}
+          type="button"
+          role="radio"
+          aria-checked={value === mode.key}
+          className={`org-vote-mode-option${value === mode.key ? " on" : ""}`}
+          onClick={() => onChange(mode.key)}
+        >
+          <span className="org-vote-mode-title">{mode.label}</span>
+          <span className="org-vote-mode-desc">{mode.desc}</span>
+        </button>
+      ))}
+    </div>
+  );
 }
 
 // ---------------------------------------------------------------------------
@@ -116,13 +211,13 @@ const seedEvents = [
     description: "Five finalists, one crown. Voting closes at midnight — every vote counts.",
     accent: "#C98CF0",
     cover: null,
-    startsAt: "2026-11-07T18:00",
-    endsAt: "2026-11-07T23:59",
+    startsAt: localDateTime(SEED_NOW - 2 * HOUR_MS),
+    endsAt: localDateTime(SEED_NOW + 6 * HOUR_MS),
     visibility: "public",
     freeVotingEnabled: true,
     freeVoteLimit: 1,
-    paidVotingEnabled: true,
-    paidVotePrice: 100,
+    paidVotingEnabled: false,
+    paidVotePrice: 0,
     contestants: [
       { id: "t1", name: "Amara Okafor", category: "Music", votes: 842, status: "active", paid: true },
       { id: "t2", name: "Tolu Adeyemi", category: "Dance", votes: 913, status: "active", paid: true },
@@ -134,14 +229,14 @@ const seedEvents = [
   {
     id: "ev-missfresher",
     name: "Miss Fresher 2026",
-    description: "The freshers' showcase. Free votes reset daily, paid votes support your faculty.",
+    description: "The freshers' showcase. Paid votes support your faculty.",
     accent: "#FF8FA3",
     cover: null,
     startsAt: "2026-11-02T17:00",
     endsAt: "2026-11-02T22:00",
     visibility: "public",
-    freeVotingEnabled: true,
-    freeVoteLimit: 2,
+    freeVotingEnabled: false,
+    freeVoteLimit: 0,
     paidVotingEnabled: true,
     paidVotePrice: 50,
     contestants: [
@@ -159,8 +254,8 @@ const seedEvents = [
     description: "Four DJs, two decks, one winner. Unlisted — share the link to let people vote.",
     accent: "#8FB8FF",
     cover: null,
-    startsAt: "2026-11-14T20:00",
-    endsAt: "2026-11-15T02:00",
+    startsAt: localDateTime(SEED_NOW - 1 * HOUR_MS),
+    endsAt: localDateTime(SEED_NOW + 40 * HOUR_MS),
     visibility: "unlisted",
     freeVotingEnabled: false,
     freeVoteLimit: 0,
@@ -205,8 +300,8 @@ const seedEvents = [
     startsAt: "2026-10-28T09:00",
     endsAt: "2026-10-31T21:00",
     visibility: "public",
-    freeVotingEnabled: true,
-    freeVoteLimit: 1,
+    freeVotingEnabled: false,
+    freeVoteLimit: 0,
     paidVotingEnabled: true,
     paidVotePrice: 30,
     contestants: [
@@ -229,8 +324,8 @@ const seedEvents = [
     startsAt: "2026-12-05T18:00",
     endsAt: "2026-12-05T22:30",
     visibility: "public",
-    freeVotingEnabled: true,
-    freeVoteLimit: 1,
+    freeVotingEnabled: false,
+    freeVoteLimit: 0,
     paidVotingEnabled: true,
     paidVotePrice: 150,
     contestants: [
@@ -272,8 +367,8 @@ const seedEvents = [
     startsAt: "2026-11-28T19:00",
     endsAt: "2026-11-28T23:00",
     visibility: "public",
-    freeVotingEnabled: true,
-    freeVoteLimit: 1,
+    freeVotingEnabled: false,
+    freeVoteLimit: 0,
     paidVotingEnabled: true,
     paidVotePrice: 75,
     contestants: [
@@ -314,8 +409,8 @@ const seedEvents = [
     startsAt: "2026-11-05T08:00",
     endsAt: "2026-11-09T20:00",
     visibility: "public",
-    freeVotingEnabled: true,
-    freeVoteLimit: 1,
+    freeVotingEnabled: false,
+    freeVoteLimit: 0,
     paidVotingEnabled: true,
     paidVotePrice: 40,
     contestants: [
@@ -339,8 +434,8 @@ const seedEvents = [
     startsAt: "2026-10-01T17:00",
     endsAt: "2026-10-01T23:00",
     visibility: "public",
-    freeVotingEnabled: true,
-    freeVoteLimit: 1,
+    freeVotingEnabled: false,
+    freeVoteLimit: 0,
     paidVotingEnabled: true,
     paidVotePrice: 120,
     contestants: [
@@ -363,8 +458,8 @@ const seedEvents = [
     startsAt: "2026-12-19T20:00",
     endsAt: "2026-12-19T23:30",
     visibility: "public",
-    freeVotingEnabled: true,
-    freeVoteLimit: 1,
+    freeVotingEnabled: false,
+    freeVoteLimit: 0,
     paidVotingEnabled: true,
     paidVotePrice: 60,
     contestants: [
@@ -398,8 +493,8 @@ const blankDraft = () => ({
   visibility: "public",
   freeVotingEnabled: true,
   freeVoteLimit: 1,
-  paidVotingEnabled: true,
-  paidVotePrice: 50,
+  paidVotingEnabled: false,
+  paidVotePrice: 0,
   rows: [{ key: uid("row"), name: "", category: "", paid: false }],
 });
 
@@ -425,12 +520,41 @@ export default function StagePickApp({ onOpenHome = null }) {
   const [toastCelebration, setToastCelebration] = useState(false);
   const [activityLog, setActivityLog] = useState([]);
 
+  // A once-a-minute clock keeps "live" honest while the page stays open without
+  // re-rendering on every tick of a faster timer.
+  const [phaseNow, setPhaseNow] = useState(() => Date.now());
+  useEffect(() => {
+    const id = setInterval(() => setPhaseNow(Date.now()), 60_000);
+    return () => clearInterval(id);
+  }, []);
+
   // Each event owns its contestants, voting rules and visibility.
   const [events, setEvents] = useState(seedEvents);
-  const [eventIndex, setEventIndex] = useState(0);
+  const [activeEventId, setActiveEventId] = useState(() => pickInitialEventId(seedEvents));
+  const eventIndex = Math.max(0, events.findIndex((event) => event.id === activeEventId));
   const activeEvent = events[eventIndex] ?? events[0];
-  const activeEventId = activeEvent.id;
   const contestants = activeEvent.contestants;
+
+  // Selecting from the rail updates the URL and the stored preference, so the
+  // choice survives a refresh and the organiser round-trip.
+  const selectEvent = (id) => {
+    setActiveEventId(id);
+    try {
+      window.localStorage.setItem(ACTIVE_EVENT_KEY, id);
+    } catch {
+      /* Storage can be blocked; the in-memory selection still works. */
+    }
+  };
+
+  useEffect(() => {
+    try {
+      const url = new URL(window.location.href);
+      url.searchParams.set("event", activeEvent.id);
+      window.history.replaceState(null, "", url.toString());
+    } catch {
+      /* History can be blocked; the in-memory selection still works. */
+    }
+  }, [activeEvent.id]);
 
   // Create-event wizard
   const [wizardOpen, setWizardOpen] = useState(
@@ -494,6 +618,19 @@ export default function StagePickApp({ onOpenHome = null }) {
   const myVotesForEvent = myVotes.filter((v) => v.eventId === activeEventId);
   const freeVotesUsedCount = freeVotesUsed[activeEventId] || 0;
   const shareUrl = shareUrlFor(activeEvent.name);
+
+  // Live contests lead the rail; upcoming and ended ones follow. Selection is
+  // tracked by id, so reordering never changes which event is open.
+  const activePhase = eventPhase(activeEvent, phaseNow);
+  const railEvents = [...events].sort((a, b) => {
+    const byPhase =
+      PHASE_ORDER[eventPhase(a, phaseNow)] - PHASE_ORDER[eventPhase(b, phaseNow)];
+    if (byPhase !== 0) return byPhase;
+    return new Date(a.startsAt).getTime() - new Date(b.startsAt).getTime();
+  });
+  const liveEventCount = events.filter(
+    (event) => eventPhase(event, phaseNow) === "live",
+  ).length;
 
   // --- Every mutation below writes to the active event only ---
   const setContestants = (updater) =>
@@ -632,7 +769,7 @@ export default function StagePickApp({ onOpenHome = null }) {
       }));
     const event = { ...fields, id: uid("ev"), name, contestants: list };
     setEvents((prev) => [...prev, event]);
-    setEventIndex(events.length);
+    selectEvent(event.id);
     setWizardOpen(false);
     setWizardStep(0);
     setDraft(blankDraft());
@@ -826,21 +963,25 @@ export default function StagePickApp({ onOpenHome = null }) {
             <div className="app-wrap">
               <div className="voter-rail-head">
                 <span className="voter-rail-title">Live events</span>
-                <span className="voter-rail-count">{events.length} open</span>
+                <span className="voter-rail-count">
+                  {liveEventCount} live · {events.length} total
+                </span>
               </div>
 
               <div className="voter-rail" role="tablist" aria-label="Events">
-                {events.map((ev, i) => {
+                {railEvents.map((ev, i) => {
                   const evTotal = ev.contestants.reduce((sum, c) => sum + c.votes, 0);
+                  const phase = eventPhase(ev, phaseNow);
+                  const selected = ev.id === activeEvent.id;
 
                   return (
                     <button
                       type="button"
                       key={ev.id}
                       role="tab"
-                      aria-selected={i === eventIndex}
-                      className={`voter-chip${i === eventIndex ? " active" : ""}`}
-                      onClick={() => setEventIndex(i)}
+                      aria-selected={selected}
+                      className={`voter-chip ${phase}${selected ? " active" : ""}`}
+                      onClick={() => selectEvent(ev.id)}
                       style={{ "--i": Math.min(i, 7) }}
                     >
                       <span
@@ -852,13 +993,22 @@ export default function StagePickApp({ onOpenHome = null }) {
                       <span className="voter-chip-body">
                         <span className="voter-chip-name">{ev.name}</span>
                         <span className="voter-chip-meta">
-                          {countLabel(ev.contestants.length, "contestant")} · {countLabel(evTotal, "vote")}
+                          <span className={`voter-chip-phase ${phase}`}>
+                            {PHASE_LABEL[phase]}
+                          </span>
+                          {countLabel(ev.contestants.length, "contestant")} ·{" "}
+                          {countLabel(evTotal, "vote")}
                         </span>
                       </span>
                     </button>
                   );
                 })}
               </div>
+              {liveEventCount === 0 && (
+                <p className="voter-rail-note">
+                  Nothing is live right now — the next event is listed first.
+                </p>
+              )}
             </div>
           </div>
 
@@ -876,7 +1026,10 @@ export default function StagePickApp({ onOpenHome = null }) {
             <div className="app-wrap voter-hero-inner">
               <div className="voter-hero-copy" key={activeEvent.id}>
                 <div className="voter-hero-tags">
-                  <span className="voter-badge"><span className="voter-dot"></span>Live</span>
+                  <span className={`voter-badge ${activePhase}`}>
+                    <span className="voter-dot" />
+                    {PHASE_LABEL[activePhase]}
+                  </span>
                   <span className="voter-tag-pill">
                     {activeEvent.visibility === "unlisted" ? "Unlisted" : "Public"}
                   </span>
@@ -890,16 +1043,15 @@ export default function StagePickApp({ onOpenHome = null }) {
                   {activeEvent.description || "Vote for your favourite contestant. Results update live."}
                 </p>
                 <div className="voter-hero-foot">
-                  <span className={`voter-rule${activeEvent.freeVotingEnabled ? "" : " off"}`}>
-                    {activeEvent.freeVotingEnabled
-                      ? `${freeVotesRemaining} free vote${freeVotesRemaining === 1 ? "" : "s"} left`
-                      : "Paid votes only"}
-                  </span>
-                  <span className={`voter-rule${activeEvent.paidVotingEnabled ? "" : " off"}`}>
-                    {activeEvent.paidVotingEnabled
-                      ? `₦${activeEvent.paidVotePrice} per paid vote`
-                      : "No paid votes"}
-                  </span>
+                  {activeEvent.freeVotingEnabled ? (
+                    <span className="voter-rule">
+                      {freeVotesRemaining} free vote{freeVotesRemaining === 1 ? "" : "s"} left
+                    </span>
+                  ) : (
+                    <span className="voter-rule paid">
+                      ₦{activeEvent.paidVotePrice} per paid vote
+                    </span>
+                  )}
                 </div>
               </div>
               <div className="voter-total">
@@ -1012,7 +1164,7 @@ export default function StagePickApp({ onOpenHome = null }) {
                 <select
                   className="org-event-select-native"
                   value={eventIndex}
-                  onChange={(e) => setEventIndex(Number(e.target.value))}
+                  onChange={(e) => selectEvent(events[Number(e.target.value)].id)}
                   aria-label="Active event"
                 >
                   {events.map((ev, i) => <option key={ev.id} value={i}>{ev.name}</option>)}
@@ -1298,15 +1450,16 @@ export default function StagePickApp({ onOpenHome = null }) {
 
               {orgSection === "settings" && (
                 <div className="org-panel" style={{ marginTop: 28 }}>
-                  <div className="org-setting-row">
+                  <div className="org-setting-row" style={{ display: "block" }}>
                     <div>
-                      <div className="org-setting-label">Free voting</div>
-                      <div className="org-setting-desc">Let each voter cast a limited number of free votes.</div>
+                      <div className="org-setting-label">Voting type</div>
+                      <div className="org-setting-desc">
+                        Pick one. An event is either free to vote in or paid — not both.
+                      </div>
                     </div>
-                    <button
-                      className={`org-toggle${activeEvent.freeVotingEnabled ? " on" : ""}`}
-                      onClick={() => patchEvent({ freeVotingEnabled: !activeEvent.freeVotingEnabled })}
-                      aria-label="Toggle free voting"
+                    <VotingModePicker
+                      value={votingModeOf(activeEvent)}
+                      onChange={(mode) => patchEvent(votingModePatch(activeEvent, mode))}
                     />
                   </div>
 
@@ -1328,18 +1481,6 @@ export default function StagePickApp({ onOpenHome = null }) {
                       </div>
                     </div>
                   )}
-
-                  <div className="org-setting-row">
-                    <div>
-                      <div className="org-setting-label">Paid voting</div>
-                      <div className="org-setting-desc">Let voters buy extra votes for a candidate. Purchased votes are locked to that candidate.</div>
-                    </div>
-                    <button
-                      className={`org-toggle${activeEvent.paidVotingEnabled ? " on" : ""}`}
-                      onClick={() => patchEvent({ paidVotingEnabled: !activeEvent.paidVotingEnabled })}
-                      aria-label="Toggle paid voting"
-                    />
-                  </div>
 
                   {activeEvent.paidVotingEnabled && (
                     <div className="org-setting-row">
@@ -1422,7 +1563,7 @@ export default function StagePickApp({ onOpenHome = null }) {
         </>
       )}
 
-      {/* Vote flow modal: free vote and/or paid vote with quantity, price, and payment steps */}
+      {/* Vote flow modal: free vote or paid vote, with quantity, price and payment steps */}
       {voteFlow && (
         <div className="app-modal-backdrop" onClick={() => setVoteFlow(null)}>
           <div className="app-modal" onClick={(e) => e.stopPropagation()}>
@@ -1491,7 +1632,7 @@ export default function StagePickApp({ onOpenHome = null }) {
 
                 {!activeEvent.freeVotingEnabled && !activeEvent.paidVotingEnabled && (
                   <p style={{ margin: 0 }}>
-                    Voting is closed for this event — the organiser hasn't enabled free or paid votes.
+                    Voting is closed for this event — the organiser hasn't opened voting yet.
                   </p>
                 )}
               </>
@@ -1669,16 +1810,16 @@ export default function StagePickApp({ onOpenHome = null }) {
 
               {wizardStep === 2 && (
                 <>
-                  <div className="org-setting-row" style={{ borderTop: "none", paddingTop: 0 }}>
+                  <div className="org-setting-row" style={{ borderTop: "none", paddingTop: 0, display: "block" }}>
                     <div>
-                      <div className="org-setting-label">Free voting</div>
-                      <div className="org-setting-desc">Each voter gets a limited number of free votes.</div>
+                      <div className="org-setting-label">How do people vote?</div>
+                      <div className="org-setting-desc">
+                        Pick one. You can switch between free and paid later.
+                      </div>
                     </div>
-                    <button
-                      type="button"
-                      className={`org-toggle${draft.freeVotingEnabled ? " on" : ""}`}
-                      onClick={() => setDraft((d) => ({ ...d, freeVotingEnabled: !d.freeVotingEnabled }))}
-                      aria-label="Toggle free voting"
+                    <VotingModePicker
+                      value={draft.freeVotingEnabled ? "free" : "paid"}
+                      onChange={(mode) => setDraft((d) => ({ ...d, ...votingModePatch(d, mode) }))}
                     />
                   </div>
 
@@ -1701,19 +1842,6 @@ export default function StagePickApp({ onOpenHome = null }) {
                     </div>
                   )}
 
-                  <div className="org-setting-row">
-                    <div>
-                      <div className="org-setting-label">Paid voting</div>
-                      <div className="org-setting-desc">Voters can buy extra votes. Purchased votes are locked to that candidate.</div>
-                    </div>
-                    <button
-                      type="button"
-                      className={`org-toggle${draft.paidVotingEnabled ? " on" : ""}`}
-                      onClick={() => setDraft((d) => ({ ...d, paidVotingEnabled: !d.paidVotingEnabled }))}
-                      aria-label="Toggle paid voting"
-                    />
-                  </div>
-
                   {draft.paidVotingEnabled && (
                     <div className="org-setting-row">
                       <div>
@@ -1728,13 +1856,6 @@ export default function StagePickApp({ onOpenHome = null }) {
                           onChange={(e) => setDraft((d) => ({ ...d, paidVotePrice: Number(e.target.value) }))}
                         />
                       </div>
-                    </div>
-                  )}
-
-                  {!draft.freeVotingEnabled && !draft.paidVotingEnabled && (
-                    <div className="empty-state">
-                      <h3>No way to vote</h3>
-                      <p>Turn on free voting, paid voting, or both.</p>
                     </div>
                   )}
                 </>

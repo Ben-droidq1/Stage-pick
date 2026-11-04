@@ -27,7 +27,7 @@ const GoogleSignInButton = lazy(() => import("./GoogleSignInButton.jsx"));
 // Why someone would sign up, shown on the brand panel.
 const AUTH_POINTS = [
   "Live leaderboards that update as votes land",
-  "Free and paid voting on the same event",
+  "Free or paid voting — you choose the model",
   "Shareable links for every contest",
 ];
 
@@ -46,6 +46,79 @@ function initials(name) {
     .join("")
     .slice(0, 2)
     .toUpperCase();
+}
+
+// Shown while a route chunk downloads. Matches the shape of the page it
+// replaces so the layout doesn't jump when the real content mounts.
+function RouteSkeleton({ variant }) {
+  const chips = Array.from({ length: 5 });
+  const cards = Array.from({ length: 4 });
+
+  return (
+    <div className={`sk-page sk-${variant}`} role="status" aria-live="polite">
+      <span className="sk-sr">Loading StagePick…</span>
+
+      <div className="sk-topbar">
+        <div className="sk-brand">
+          <span className="sk-block sk-brand-mark" />
+          <span className="sk-block sk-brand-line" />
+        </div>
+        <span className="sk-block sk-icon" />
+      </div>
+
+      {variant === "voter" ? (
+        <div className="sk-voter-grid" aria-hidden="true">
+          <aside className="sk-rail">
+            <span className="sk-block sk-label" />
+            {chips.map((_, i) => (
+              <div className="sk-chip" key={i}>
+                <span className="sk-block sk-thumb" />
+                <span className="sk-chip-lines">
+                  <span className="sk-block sk-line" />
+                  <span className="sk-block sk-line sk-short" />
+                </span>
+              </div>
+            ))}
+          </aside>
+          <main className="sk-main">
+            <span className="sk-block sk-pill" />
+            <span className="sk-block sk-heading" />
+            <span className="sk-block sk-copy" />
+            <div className="sk-card">
+              <span className="sk-block sk-row" />
+              <span className="sk-block sk-row" />
+              <span className="sk-block sk-row" />
+              <span className="sk-block sk-row" />
+            </div>
+          </main>
+        </div>
+      ) : (
+        <div className="sk-home-wrap" aria-hidden="true">
+          <span className="sk-block sk-eyebrow" />
+          <span className="sk-block sk-heading" />
+          <span className="sk-block sk-copy" />
+          <span className="sk-block sk-search" />
+          <div className="sk-chips">
+            {chips.map((_, i) => (
+              <span className="sk-block sk-chip-pill" key={i} />
+            ))}
+          </div>
+          <div className="sk-cards">
+            {cards.map((_, i) => (
+              <div className="sk-event-card" key={i}>
+                <span className="sk-block sk-cover" />
+                <div className="sk-event-body">
+                  <span className="sk-block sk-line" />
+                  <span className="sk-block sk-line sk-short" />
+                  <span className="sk-block sk-line sk-tiny" />
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+    </div>
+  );
 }
 
 function App() {
@@ -473,7 +546,7 @@ function App() {
 
   if (view === "home") {
     return (
-      <Suspense fallback={<div className="app-loading">Loading StagePick…</div>}>
+      <Suspense fallback={<RouteSkeleton variant="home" />}>
         <StagePickHome
           startSignedIn={signedIn}
           initialAccount={account}
@@ -487,7 +560,7 @@ function App() {
 
   if (view === "voter") {
     return (
-      <Suspense fallback={<div className="app-loading">Loading StagePick…</div>}>
+      <Suspense fallback={<RouteSkeleton variant="voter" />}>
         <StagePickApp onOpenHome={openHome} />
       </Suspense>
     );
