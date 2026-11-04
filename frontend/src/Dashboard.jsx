@@ -1,18 +1,30 @@
-import { useEffect, useRef, useState } from "react";
+import { lazy, memo, Suspense, useEffect, useRef, useState } from "react";
 import {
   Menu, X, ArrowLeft, Check, Plus, User, Users2, Settings as SettingsIcon,
   BarChart3, Download, Trash2, Eye, Pencil, TrendingUp, TrendingDown, Crown,
   PartyPopper, LogOut, History, MoreVertical, ChevronDown, ChevronLeft,
   ChevronRight, ImagePlus, Link2, Copy,
 } from "lucide-react";
-import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from "recharts";
 import "./dashboard.css";
+
+// Recharts is ~300 kB. Keep it out of the initial dashboard bundle and fetch
+// the chunk the first time someone asks to see the trend chart.
+const TrendChart = lazy(() => import("./TrendChart.jsx"));
+const loadTrendChart = () => import("./TrendChart.jsx");
+
+const TREND_SERIES = [
+  { key: "c1", name: "1st place", stroke: "#F2682A", width: 2.5 },
+  { key: "c2", name: "2nd place", stroke: "#3B5BF5" },
+  { key: "c3", name: "3rd place", stroke: "#9A9488" },
+];
+
+const AUDIENCE_SERIES = [{ key: "voters", name: "Voters", stroke: "#3B5BF5", width: 2.5 }];
 
 function initials(name) {
   return name.split(" ").map((p) => p[0]).join("").slice(0, 2).toUpperCase();
 }
 
-function Sparkline({ data, color = "#3B5BF5" }) {
+const Sparkline = memo(function Sparkline({ data, color = "#3B5BF5" }) {
   if (!data || data.length < 2) return <div style={{ width: 52, height: 22 }} />;
   const w = 52, h = 22;
   const max = Math.max(...data), min = Math.min(...data);
@@ -29,9 +41,9 @@ function Sparkline({ data, color = "#3B5BF5" }) {
       <polyline points={points} fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
     </svg>
   );
-}
+});
 
-function DeltaBadge({ delta }) {
+const DeltaBadge = memo(function DeltaBadge({ delta }) {
   if (!delta) return null;
   const up = delta > 0;
   const Icon = up ? TrendingUp : TrendingDown;
@@ -40,7 +52,7 @@ function DeltaBadge({ delta }) {
       <Icon size={10} /> {up ? "+" : ""}{delta}
     </span>
   );
-}
+});
 
 function ShareLink({ url, onCopy, label, desc, className = "" }) {
   return (
@@ -1039,7 +1051,8 @@ export default function StagePickApp({ onOpenHome = null }) {
               <button
                 key={key}
                 className={`org-section-tab${orgSection === key ? " active" : ""}`}
-                onClick={() => setOrgSection(key)}
+                onClick={() => { if (key === "audience") loadTrendChart(); setOrgSection(key); }}
+                onPointerEnter={() => { if (key === "audience") loadTrendChart(); }}
               >
                 <Icon size={14} /> {label}
               </button>
@@ -1052,7 +1065,7 @@ export default function StagePickApp({ onOpenHome = null }) {
                 <>
                   {activeEvent.cover && (
                     <div className="org-cover">
-                      <img src={activeEvent.cover} alt={`${activeEvent.name} cover`} />
+                      <img src={activeEvent.cover} alt={`${activeEvent.name} cover`} loading="lazy" decoding="async" />
                     </div>
                   )}
 
@@ -1107,7 +1120,14 @@ export default function StagePickApp({ onOpenHome = null }) {
 
                     <div className="org-segmented">
                       <button className={`org-segment${orgTab === "leaderboard" ? " active" : ""}`} onClick={() => setOrgTab("leaderboard")}>Leaderboard</button>
-                      <button className={`org-segment${orgTab === "trend" ? " active" : ""}`} onClick={() => setOrgTab("trend")}>Trend</button>
+                      <button
+                        className={`org-segment${orgTab === "trend" ? " active" : ""}`}
+                        onClick={() => setOrgTab("trend")}
+                        onPointerEnter={loadTrendChart}
+                        onFocus={loadTrendChart}
+                      >
+                        Trend
+                      </button>
                     </div>
 
                     {orgTab === "leaderboard" ? (
@@ -1130,17 +1150,9 @@ export default function StagePickApp({ onOpenHome = null }) {
                         ))}
                       </div>
                     ) : (
-                      <ResponsiveContainer width="100%" height={220}>
-                        <LineChart data={trendData} margin={{ left: -20, right: 10, top: 10 }}>
-                          <CartesianGrid stroke="#E7E3D6" vertical={false} />
-                          <XAxis dataKey="t" tick={{ fontSize: 12, fill: "#8B867A" }} axisLine={false} tickLine={false} />
-                          <YAxis tick={{ fontSize: 12, fill: "#8B867A" }} axisLine={false} tickLine={false} />
-                          <Tooltip contentStyle={{ fontSize: 13, borderRadius: 12, border: "1px solid #E2DED2", background: "#FFFDF7", color: "#14131A" }} labelStyle={{ color: "#8B867A" }} itemStyle={{ color: "#14131A" }} />
-                          <Line type="monotone" dataKey="c1" name="1st place" stroke="#F2682A" strokeWidth={2.5} dot={false} />
-                          <Line type="monotone" dataKey="c2" name="2nd place" stroke="#3B5BF5" strokeWidth={2} dot={false} />
-                          <Line type="monotone" dataKey="c3" name="3rd place" stroke="#9A9488" strokeWidth={2} dot={false} />
-                        </LineChart>
-                      </ResponsiveContainer>
+                      <Suspense fallback={<div className="org-chart-skeleton" aria-hidden="true" />}>
+                        <TrendChart data={trendData} series={TREND_SERIES} />
+                      </Suspense>
                     )}
                   </div>
 
@@ -1234,15 +1246,9 @@ export default function StagePickApp({ onOpenHome = null }) {
                     <div className="org-panel-head">
                       <h2 className="org-panel-title">Voters over time</h2>
                     </div>
-                    <ResponsiveContainer width="100%" height={200}>
-                      <LineChart data={audienceTrend} margin={{ left: -20, right: 10, top: 10 }}>
-                        <CartesianGrid stroke="#E7E3D6" vertical={false} />
-                        <XAxis dataKey="t" tick={{ fontSize: 12, fill: "#8B867A" }} axisLine={false} tickLine={false} />
-                        <YAxis tick={{ fontSize: 12, fill: "#8B867A" }} axisLine={false} tickLine={false} />
-                        <Tooltip contentStyle={{ fontSize: 13, borderRadius: 12, border: "1px solid #E2DED2", background: "#FFFDF7", color: "#14131A" }} labelStyle={{ color: "#8B867A" }} itemStyle={{ color: "#14131A" }} />
-                        <Line type="monotone" dataKey="voters" stroke="#3B5BF5" strokeWidth={2.5} dot={false} />
-                      </LineChart>
-                    </ResponsiveContainer>
+                    <Suspense fallback={<div className="org-chart-skeleton" style={{ height: 200 }} aria-hidden="true" />}>
+                      <TrendChart data={audienceTrend} series={AUDIENCE_SERIES} height={200} />
+                    </Suspense>
                   </div>
                 </div>
               )}
@@ -1570,7 +1576,7 @@ export default function StagePickApp({ onOpenHome = null }) {
                     <input ref={coverInputRef} type="file" accept="image/*" hidden onChange={handleCoverFile} />
                     {draft.cover ? (
                       <div className="org-cover-preview">
-                        <img src={draft.cover} alt="Cover preview" />
+                        <img src={draft.cover} alt="Cover preview" loading="lazy" decoding="async" />
                         <div className="org-cover-preview-bar">
                           <span>Cover selected</span>
                           <div style={{ display: "flex", gap: 8 }}>

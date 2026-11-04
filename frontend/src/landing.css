@@ -581,6 +581,9 @@ body ::selection {
   font-family: "JetBrains Mono", monospace;
   font-size: 12px;
   font-weight: 700;
+  /* The demo board ticks every 2.2s; tabular figures stop the row from
+     reflowing as the digits change. */
+  font-variant-numeric: tabular-nums;
 }
 
 .lp-board-foot {
@@ -1575,12 +1578,10 @@ footer.lp-footer {
 
 @keyframes lp-art-in {
   from {
-    opacity: 0;
-    transform: translateY(16px) scale(0.975);
+    transform: translateY(10px) scale(0.985);
   }
 
   to {
-    opacity: 1;
     transform: none;
   }
 }
@@ -1589,32 +1590,32 @@ footer.lp-footer {
   animation: lp-drop 280ms var(--ease-out) backwards;
 }
 
-.lp-hero-copy > * {
-  animation: lp-rise 340ms var(--ease-out) backwards;
+/* The h1 is the LCP element on this page: it must paint immediately, so it is
+   deliberately excluded from the entrance fade. Supporting copy still settles
+   in behind it. */
+.lp-hero-copy > :not(.lp-h1) {
+  animation: lp-rise 300ms var(--ease-out) backwards;
 }
 
 .lp-hero-copy > :nth-child(1) {
-  animation-delay: 40ms;
-}
-
-.lp-hero-copy > :nth-child(2) {
-  animation-delay: 85ms;
+  animation-delay: 30ms;
 }
 
 .lp-hero-copy > :nth-child(3) {
-  animation-delay: 140ms;
+  animation-delay: 80ms;
 }
 
 .lp-hero-copy > :nth-child(4) {
-  animation-delay: 195ms;
+  animation-delay: 130ms;
 }
 
 .lp-hero-copy > :nth-child(5) {
-  animation-delay: 245ms;
+  animation-delay: 175ms;
 }
 
+/* Transform-only: no opacity gate, so the art is painted on first frame. */
 .lp-art {
-  animation: lp-art-in 520ms var(--ease-out) 140ms backwards;
+  animation: lp-art-in 300ms var(--ease-out) backwards;
 }
 
 @media (prefers-reduced-motion: reduce) {

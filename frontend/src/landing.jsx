@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { ArrowRight, Check, Crown, X } from "lucide-react";
 import "./landing.css";
 
@@ -71,11 +71,33 @@ function GeoMark({ variant = "m1" }) {
 // never re-renders the rest of the landing page.
 function HeroArt() {
   const [board, setBoard] = useState(initialBoard);
+  const artRef = useRef(null);
+  const visibleRef = useRef(true);
+
+  // Stop the ticker while the hero is scrolled out of view — on a slow laptop
+  // there is no reason to re-render three rows nobody can see.
+  useEffect(() => {
+    const node = artRef.current;
+
+    if (!node || typeof IntersectionObserver !== "function") {
+      return undefined;
+    }
+
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        visibleRef.current = entry.isIntersecting;
+      },
+      { rootMargin: "120px" },
+    );
+
+    observer.observe(node);
+    return () => observer.disconnect();
+  }, []);
 
   useEffect(() => {
     const id = setInterval(() => {
-      // Skip the update when the tab is in the background.
-      if (document.hidden) return;
+      // Skip the update when the tab is in the background or the art is offscreen.
+      if (document.hidden || !visibleRef.current) return;
 
       setBoard((prev) => {
         const next = prev.map((contestant) => {
@@ -91,7 +113,7 @@ function HeroArt() {
   }, []);
 
   return (
-    <div className="lp-art" aria-hidden="true">
+    <div className="lp-art" aria-hidden="true" ref={artRef}>
       <span className="lp-blob green" />
       <span className="lp-blob blue" />
       <span className="lp-blob orange" />

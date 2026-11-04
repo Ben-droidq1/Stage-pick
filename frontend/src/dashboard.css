@@ -344,6 +344,11 @@
   .org-lb-category{font-size:11.5px; color:var(--ink-dim); margin-top:1px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;}
   .org-lb-votes{font-family:'JetBrains Mono', monospace; font-size:13.5px; font-weight:700; width:52px; text-align:right; flex-shrink:0; color:var(--ink); font-variant-numeric:tabular-nums;}
 
+  /* Placeholder that reserves the chart's height while the lazy chunk loads. */
+  .org-chart-skeleton{
+    height:220px; border-radius:14px; background:linear-gradient(180deg, rgba(20,19,26,0.04), rgba(20,19,26,0.015));
+  }
+
   /* activity feed */
   .org-activity-row{display:flex; gap:14px; padding:13px 0; border-top:1px solid var(--line);}
   .org-activity-row:first-child{border-top:none;}
@@ -510,32 +515,29 @@
   /* event rail */
   .voter-rail-head{animation:app-rise 280ms var(--ease-out) 40ms backwards;}
   .voter-chip{
-    animation:app-rise 300ms var(--ease-out) backwards;
-    animation-delay:calc(70ms + var(--i,0) * 34ms);
+    animation:app-rise 260ms var(--ease-out) backwards;
+    animation-delay:calc(20ms + var(--i,0) * 18ms);
   }
 
-  /* voter hero */
+  /* voter hero — title and total are LCP candidates, so they paint at once */
   .voter-hero-tags,
-  .voter-title,
   .voter-sub,
-  .voter-hero-foot{animation:app-rise 320ms var(--ease-out) backwards;}
-  .voter-hero-tags{animation-delay:60ms;}
-  .voter-title{animation-delay:100ms;}
-  .voter-sub{animation-delay:150ms;}
-  .voter-hero-foot{animation-delay:200ms;}
-  .voter-total{animation:app-rise 340ms var(--ease-out) 160ms backwards;}
+  .voter-hero-foot{animation:app-rise 280ms var(--ease-out) backwards;}
+  .voter-hero-tags{animation-delay:40ms;}
+  .voter-sub{animation-delay:90ms;}
+  .voter-hero-foot{animation-delay:140ms;}
 
   /* leaderboard + history */
-  .voter-section-head{animation:app-rise 300ms var(--ease-out) 60ms backwards;}
+  .voter-section-head{animation:app-rise 280ms var(--ease-out) 40ms backwards;}
   .voter-card{
     --enter-opacity:1;
-    animation:app-row-in 300ms var(--ease-out) backwards;
-    animation-delay:calc(90ms + var(--i,0) * 34ms);
+    animation:app-row-in 260ms var(--ease-out) backwards;
+    animation-delay:calc(40ms + var(--i,0) * 24ms);
   }
   .voter-card.eliminated{--enter-opacity:0.55;}
   .voter-history-row{
-    animation:app-row-in 280ms var(--ease-out) backwards;
-    animation-delay:calc(150ms + var(--i,0) * 30ms);
+    animation:app-row-in 260ms var(--ease-out) backwards;
+    animation-delay:calc(80ms + var(--i,0) * 20ms);
   }
 
   /* organiser shell */

@@ -68,6 +68,8 @@ async function writeUsers(users) {
 function sendJson(req, res, statusCode, data) {
   res.writeHead(statusCode, {
     "Content-Type": "application/json; charset=utf-8",
+    // User records are per-request data; never let a proxy cache them.
+    "Cache-Control": "no-store",
     ...corsHeaders(req),
   });
   res.end(JSON.stringify(data));

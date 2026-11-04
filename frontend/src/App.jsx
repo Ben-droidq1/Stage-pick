@@ -12,7 +12,6 @@ import {
 } from "lucide-react";
 import "./App.css";
 import StagePickLanding from "./landing.jsx";
-import GoogleSignInButton from "./GoogleSignInButton.jsx";
 import { createUser } from "./api";
 import { accountFromProfile, decodeCredential } from "./googleAuth";
 import { DEMO_ACCOUNT, EMAIL_RE, checkCredentials, publicAccount } from "./authStore";
@@ -22,6 +21,8 @@ import { DEMO_ACCOUNT, EMAIL_RE, checkCredentials, publicAccount } from "./authS
 const StagePickApp = lazy(() => import("./Dashboard.jsx"));
 // The voter home screen: paper theme, mobile-first, free/paid voting.
 const StagePickHome = lazy(() => import("./StagePickApp.jsx"));
+// Google's button (and its script loader) is only needed on the auth screen.
+const GoogleSignInButton = lazy(() => import("./GoogleSignInButton.jsx"));
 
 // Why someone would sign up, shown on the brand panel.
 const AUTH_POINTS = [
@@ -297,14 +298,16 @@ function App() {
               </p>
             </header>
 
-            <GoogleSignInButton
-              onCredential={handleGoogleCredential}
-              onUnavailable={() =>
-                setGoogleError(
-                  "Google sign-in couldn't load. Check your connection and reload, or use your email below.",
-                )
-              }
-            />
+            <Suspense fallback={<div className="auth-google is-loading" aria-hidden="true" />}>
+              <GoogleSignInButton
+                onCredential={handleGoogleCredential}
+                onUnavailable={() =>
+                  setGoogleError(
+                    "Google sign-in couldn't load. Check your connection and reload, or use your email below.",
+                  )
+                }
+              />
+            </Suspense>
 
             {googleError && (
               <p className="auth-form-error auth-google-error" role="alert">
