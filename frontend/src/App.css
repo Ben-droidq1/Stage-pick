@@ -295,14 +295,14 @@ body {
 .auth-main {
   display: grid;
   place-items: center;
-  padding: clamp(24px, 4vw, 56px);
+  padding: clamp(28px, 4.4vw, 64px);
   background: #f7f5ee;
 }
 
 .auth-card {
   width: 100%;
-  max-width: 440px;
-  padding: clamp(26px, 3.4vw, 40px);
+  max-width: 460px;
+  padding: clamp(30px, 3.6vw, 44px);
   background: var(--paper-2);
   border: 1px solid #e6e2d6;
   border-radius: 26px;
@@ -433,7 +433,7 @@ body {
 .auth-form {
   display: flex;
   flex-direction: column;
-  gap: 16px;
+  gap: 18px;
 }
 
 .auth-label {
